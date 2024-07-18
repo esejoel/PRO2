@@ -1,0 +1,13 @@
+#BlueJ class context
+comment0.target=Boton
+comment1.params=txt\ px\ py\ tx\ ty\ textColor
+comment1.target=Boton(java.lang.String,\ int,\ int,\ int,\ int,\ java.awt.Color)
+comment2.params=radius
+comment2.target=javax.swing.border.Border\ createRoundBorder(int)
+comment3.params=c\ g\ x\ y\ width\ height
+comment3.target=void\ paintBorder(java.awt.Component,\ java.awt.Graphics,\ int,\ int,\ int,\ int)
+comment4.params=c
+comment4.target=java.awt.Insets\ getBorderInsets(java.awt.Component)
+comment5.params=
+comment5.target=boolean\ isBorderOpaque()
+numComments=6
