@@ -12,7 +12,7 @@ public class VentanaProducto extends JFrame implements ActionListener
 {
     Texto empresa= new Texto("TODO MOTO", 20, 30, 500, 30, Color.BLACK, 40);
     Texto indice= new Texto("PRODUCTOS", 30, 70, 1000, 20, Color.BLACK, 16);
-    Texto buscarNombre= new Texto("Nombre:", 40, 110, 100, 20, Color.BLACK, 13);
+    Texto buscarCod= new Texto("Cod. Producto:", 40, 110, 100, 20, Color.BLACK, 13);
     Caja tbBuscador= new Caja(40, 130, 5);
     Boton btnBuscar= new Boton("Buscar", 40, 160, 100, 30, Color.YELLOW);
     Boton btnActualizar= new Boton("Actualizar", 40, 240, 100, 30, Color.YELLOW);
@@ -33,6 +33,7 @@ public class VentanaProducto extends JFrame implements ActionListener
     Caja tbStock= new Caja(410, 240, 5);
     Caja tbMedida= new Caja(410, 270, 5);
     Boton btnRegistrar= new Boton("REGISTRAR", 300, 320, 100, 30, Color.WHITE);
+    Boton btnNuevo= new Boton("NUEVO", 300, 320, 100, 30, Color.WHITE);
     Boton btnMenu= new Boton("MENU", 420, 320, 100, 30, Color.WHITE);
     
     public VentanaProducto()
@@ -40,7 +41,7 @@ public class VentanaProducto extends JFrame implements ActionListener
         //AÑADIR OBJETOS
         add(empresa);
         add(indice);
-        add(buscarNombre);
+        add(buscarCod);
         add(tbBuscador);
         add(btnBuscar);
         add(btnActualizar);
@@ -62,6 +63,7 @@ public class VentanaProducto extends JFrame implements ActionListener
         add(tbStock);
         add(tbMedida);
         add(btnRegistrar);
+        add(btnNuevo);
         add(btnMenu);
         
         btnRegistrar.addActionListener(this);
@@ -69,6 +71,7 @@ public class VentanaProducto extends JFrame implements ActionListener
         btnBuscar.addActionListener(this);
         btnActualizar.addActionListener(this);
         btnEliminar.addActionListener(this);
+        btnNuevo.addActionListener(this);
         
         //CONFIG FRAME
         setLayout(null);
@@ -83,30 +86,44 @@ public class VentanaProducto extends JFrame implements ActionListener
     public static Sistema frmCrear;
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnRegistrar) {
-            String c = tbCodProducto.getText();
-            String n = tbNombre.getText();
-            String d = tbDescripcion.getText();
-            double p = tbPrecio.getText().isEmpty() ? 0.0 : Double.parseDouble(tbPrecio.getText());
-            int s = !tbStock.getText().isEmpty() ? Integer.parseInt(tbStock.getText()) : 0;
-            String m = tbMedida.getText();
-
-            Producto rp = new Producto(c, n, d, p, s, m);
-            DBA.setProducto(rp);
-            setTitle("GUARDADO");
-
-            // Limpiar los campos después del registro
-            tbCodProducto.setText("");
-            tbNombre.setText("");
-            tbDescripcion.setText("");
-            tbPrecio.setText("");
-            tbStock.setText("");
-            tbMedida.setText("");
-        }
+            try {
+                String cd = tbCodProducto.getText().trim();
+                // Verificar si el código de producto ya está registrado
+                Producto existingProducto = DBA.getProductoPorCod(cd);
+                if (existingProducto != null) {
+                    JOptionPane.showMessageDialog(this, "El código del producto ya está registrado.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+        
+                String n = tbNombre.getText();
+                String d= tbDescripcion.getText();
+                double p = tbPrecio.getText().isEmpty() ? 0.0 : Double.parseDouble(tbPrecio.getText());
+                int s = !tbStock.getText().isEmpty() ? Integer.parseInt(tbStock.getText()) : 0;
+                String m = tbMedida.getText();
+        
+                Producto nuevoProducto = new Producto(cd, n, d, p, s, m);
+                DBA.setProducto(nuevoProducto);
+                // Obtener el tamaño del vector después de agregar el producto
+                int vectorSize = DBA.getSizeProducto();
+                setTitle("GUARDADO en posición " + vectorSize);
+                // Limpiar los campos después del registro
+                tbCodProducto.setText("");
+                tbNombre.setText("");
+                tbDescripcion.setText("");
+                tbPrecio.setText("");
+                tbStock.setText("");
+                tbMedida.setText("");
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Error en el formato de número: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error al registrar el producto: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } 
         
         if (e.getSource() == btnBuscar) {
             try {
-                String nombre = tbBuscador.getText().trim();
-                Producto p = DBA.getProductoPorNombre(nombre);
+                String cod= tbBuscador.getText().trim();
+                Producto p = DBA.getProductoPorCod(cod);
                 if (p != null) {
                     tbCodProducto.setText(p.getCodProducto());
                     tbNombre.setText(p.getNombre());
@@ -114,9 +131,10 @@ public class VentanaProducto extends JFrame implements ActionListener
                     tbPrecio.setText(String.valueOf(p.getPrecio()));
                     tbStock.setText(String.valueOf(p.getStock()));
                     tbMedida.setText(p.getMedida());
-                    
                     // Almacenar el código antiguo en la caja de texto oculta
                     tbOldCodProducto.setText(p.getCodProducto());
+                    btnRegistrar.setVisible(false);
+                    btnNuevo.setVisible(true);
                 } else {
                     JOptionPane.showMessageDialog(this, "Registro no encontrado.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
@@ -129,18 +147,15 @@ public class VentanaProducto extends JFrame implements ActionListener
         
         if (e.getSource() == btnActualizar) {
             try {
-                String oldCod = tbOldCodProducto.getText().trim(); // Código antiguo
-                System.out.println("Código antiguo ingresado para actualización: " + oldCod);
-                
-                String newCod = tbCodProducto.getText(); // Nuevo código
+                String oldCod = tbOldCodProducto.getText().trim(); 
+                String cod = tbCodProducto.getText();
                 String n = tbNombre.getText();
                 String d = tbDescripcion.getText();
                 double p = tbPrecio.getText().isEmpty() ? 0.0 : Double.parseDouble(tbPrecio.getText());
                 int s = !tbStock.getText().isEmpty() ? Integer.parseInt(tbStock.getText()) : 0;
                 String m = tbMedida.getText();
                 
-                System.out.println("Intentando actualizar el producto con código antiguo: " + oldCod);
-                Producto rp = new Producto(newCod, n, d, p, s, m);
+                Producto rp = new Producto(cod, n, d, p, s, m);
                 boolean actualizado = DBA.updateProducto(oldCod, rp);
                 if (actualizado) {
                     setTitle("ACTUALIZADO");
@@ -148,7 +163,6 @@ public class VentanaProducto extends JFrame implements ActionListener
                 } else {
                     JOptionPane.showMessageDialog(this, "Error al actualizar el registro.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-    
                 // Limpiar los campos después de la actualización
                 tbCodProducto.setText("");
                 tbNombre.setText("");
@@ -156,7 +170,6 @@ public class VentanaProducto extends JFrame implements ActionListener
                 tbPrecio.setText("");
                 tbStock.setText("");
                 tbMedida.setText("");
-                
                 // Limpiar la caja de texto oculta
                 tbOldCodProducto.setText("");
             } catch (NumberFormatException ex) {
@@ -176,7 +189,6 @@ public class VentanaProducto extends JFrame implements ActionListener
                 } else {
                     JOptionPane.showMessageDialog(this, "Error al eliminar el registro.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-        
                 // Limpiar los campos después de la eliminación
                 tbCodProducto.setText("");
                 tbNombre.setText("");
@@ -187,6 +199,17 @@ public class VentanaProducto extends JFrame implements ActionListener
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+        
+        if (e.getSource() == btnNuevo) {
+            btnNuevo.setVisible(false);
+            tbCodProducto.setText("");
+            tbNombre.setText("");
+            tbDescripcion.setText("");
+            tbPrecio.setText("");
+            tbStock.setText("");
+            tbMedida.setText(""); 
+            btnRegistrar.setVisible(true);
         }
         
         if (e.getSource() == btnMenu) {

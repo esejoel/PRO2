@@ -31,9 +31,7 @@ public class DBA
     }
     
     public static Cliente getClientePorCi(int ci) {
-        System.out.println("Buscando cliente con ci: " + ci); // Depuración
         for (int i = 0; i < DB.ic; i++) {
-            System.out.println("Comparando con cliente en posicion " + i + ": " + DB.cliente[i].getCi()); // Depuración
             if (DB.cliente[i].getCi() == ci) {
                 return DB.cliente[i];
             }
@@ -41,22 +39,23 @@ public class DBA
         return null; // Retorna null si no se encuentra el cliente
     }
     
-    public static boolean updateCliente(String oldNombre, Cliente c) {
-        System.out.println("Buscando cliente con nombre antiguo: " + oldNombre);
+    public static boolean updateCliente(int oldCi, Cliente c) {
         for (int i = 0; i < DB.ic; i++) {
-            System.out.println("Comparando con producto en posición " + i + ": " + DB.cliente[i].getNombre());
-            if (DB.cliente[i].getNombre().equals(oldNombre)) {
+            if (DB.cliente[i].getCi() == oldCi) {
                 DB.cliente[i] = c;
-                System.out.println("Cliente actualizado en posicion " + i + ": " + c.getNombre()); // Depuración
                 return true;
             }
         }
-        System.out.println("Cliente con nombre " + oldNombre + " no encontrado.");
-        return false; // Retorna false si no se encuentra el producto
+        return false; // Retorna false si no se encuentra el cliente
     }
     
     public static boolean deleteCliente(int ci) {
         return DB.deleteCliente(ci);
+    }
+    
+    // Método para obtener el tamaño de la lista de clientes en DB
+    public static int getSizeCliente() {
+        return DB.ic;
     }
     
     public static void getCliente(Cliente c)
@@ -109,22 +108,22 @@ public class DBA
         return null; // Retorna null si no se encuentra el cliente
     }
     
-    public static boolean updatePersonal(String oldNombre, Personal p) {
-        System.out.println("Buscando cliente con nombre antiguo: " + oldNombre);
+    public static boolean updatePersonal(int oldCi, Personal p) {
         for (int i = 0; i < DB.ip; i++) {
-            System.out.println("Comparando con producto en posición " + i + ": " + DB.personal[i].getNombre());
-            if (DB.personal[i].getNombre().equals(oldNombre)) {
+            if (DB.personal[i].getCi() == oldCi) {
                 DB.personal[i] = p;
-                System.out.println("Cliente actualizado en posicion " + i + ": " + p.getNombre()); // Depuración
                 return true;
             }
         }
-        System.out.println("Cliente con nombre " + oldNombre + " no encontrado.");
         return false; // Retorna false si no se encuentra el producto
     }
     
     public static boolean deletePersonal(int ciPersonal) {
         return DB.deletePersonal(ciPersonal);
+    }
+    
+    public static int getSizePersonal() {
+        return DB.ip;
     }
     
     public static void getPersonal(Personal p)
@@ -146,7 +145,7 @@ public class DBA
         }
         return res;
     }
-    
+
     // PRODUCTO
     
     public static void setProducto(Producto pr)
@@ -177,9 +176,9 @@ public class DBA
         }
     }
     
-    public static Producto getProductoPorNombre(String nombre) {
+    public static Producto getProductoPorCod(String codProducto) {
         for (int i = 0; i < DB.ipr; i++) {
-            if (DB.producto[i].getNombre().equals(nombre)) {
+            if (DB.producto[i].getCodProducto().equals(codProducto)) {
                 return DB.producto[i];
             }
         }
@@ -187,21 +186,21 @@ public class DBA
     }
     
     public static boolean updateProducto(String oldCod, Producto p) {
-        System.out.println("Buscando producto con código antiguo: " + oldCod);
         for (int i = 0; i < DB.ipr; i++) {
-            System.out.println("Comparando con producto en posición " + i + ": " + DB.producto[i].getCodProducto());
             if (DB.producto[i].getCodProducto().equals(oldCod)) {
                 DB.producto[i] = p;
-                System.out.println("Producto actualizado en posicion " + i + ": " + p.getCodProducto()); // Depuración
                 return true;
             }
         }
-        System.out.println("Producto con código " + oldCod + " no encontrado.");
         return false; // Retorna false si no se encuentra el producto
     }
     
     public static boolean deleteProducto(String codProducto) {
         return DB.deleteProducto(codProducto);
+    }
+    
+    public static int getSizeProducto() {
+        return DB.ipr;
     }
     
     public static void getProducto(Producto pr)
@@ -220,8 +219,6 @@ public class DBA
     public static void setVenta(Venta v)
     {
         Venta vdb= new Venta();
-        
-        System.out.println("CodVenta recibido: " + v.codVenta); // Depuración
 
         vdb.codVenta = v.codVenta > 0 ? v.codVenta : 0;
         vdb.fecha= !v.fecha.equalsIgnoreCase("")?v.fecha:"Sin fecha";
@@ -248,9 +245,7 @@ public class DBA
     }
     
     public static Venta getVentaPorCod(int cod) {
-        System.out.println("Buscando venta con codigo: " + cod); // Depuración
         for (int i = 0; i < DB.iv; i++) {
-            System.out.println("Comparando con venta en posicion " + i + ": " + DB.venta[i].getCodVenta()); // Depuración
             if (DB.venta[i].getCodVenta() == cod) {
                 return DB.venta[i];
             }
@@ -259,12 +254,9 @@ public class DBA
     }
     
     public static boolean updateVenta(int oldCod, Venta v) {
-        System.out.println("Buscando venta con código antiguo: " + oldCod);
         for (int i = 0; i < DB.iv; i++) {
-            System.out.println("Comparando con venta en posición " + i + ": " + DB.venta[i].getCodVenta());
             if (DB.venta[i].getCodVenta() == oldCod) {
                 DB.venta[i] = v;
-                System.out.println("Venta actualizada en posición " + i + ": " + v.getCodVenta()); // Depuración
                 return true;
             }
         }
@@ -274,6 +266,10 @@ public class DBA
     
     public static boolean deleteVenta(int codVenta) {
         return DB.deleteVenta(codVenta);
+    }
+    
+    public static int getSizeVenta() {
+        return DB.iv;
     }
     
     public static void getVenta(Venta v)

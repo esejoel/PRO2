@@ -16,7 +16,6 @@ public class DB
     public static void registrarCliente(Cliente cn)
     {
             cliente[ic]= cn;
-            System.out.println("Registrando venta en posicion " + iv + ": " + cn.getCi());
             ic++;
     }
     
@@ -97,12 +96,11 @@ public class DB
     public static boolean deleteProducto(String codProducto) {
         for (int i = 0; i < ipr; i++) {
             if (producto[i].getCodProducto().equals(codProducto)) {
-                // Desplazar elementos para llenar el espacio vacío
                 for (int j = i; j < ipr - 1; j++) {
                     producto[j] = producto[j + 1];
                 }
-                producto[--ipr] = null; // Decrementar el contador y limpiar la última posición
-                return true; // Producto eliminado
+                producto[--ipr] = null;
+                return true;
             }
         }
         return false; // Producto no encontrado
