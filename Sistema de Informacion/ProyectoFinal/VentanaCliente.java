@@ -25,7 +25,7 @@ public class VentanaCliente extends JFrame implements ActionListener
     Texto telefono= new Texto("Telefono: ", 300, 240, 100, 20, Color.BLACK, 16);
     Texto correo= new Texto("Correo: ", 300, 270, 100, 20, Color.BLACK, 16);
     
-    Caja tbOldNombre= new Caja(0, 0, 5);
+    Caja tbOldCi= new Caja(0, 0, 5);
     Caja tbCi= new Caja(400, 120, 5);
     Caja tbNombre= new Caja(400, 150, 5);
     Caja tbApellido= new Caja(400, 180, 5);
@@ -33,6 +33,7 @@ public class VentanaCliente extends JFrame implements ActionListener
     Caja tbTelefono= new Caja(400, 240, 5);
     Caja tbCorreo= new Caja(400, 270, 5);
     Boton btnRegistrar= new Boton("REGISTRAR", 300, 320, 100, 30, Color.WHITE);
+    Boton btnNuevo= new Boton("NUEVO", 300, 320, 100, 30, Color.WHITE);
     Boton btnMenu= new Boton("MENU", 420, 320, 100, 30, Color.WHITE);
     
     public VentanaCliente()
@@ -53,8 +54,8 @@ public class VentanaCliente extends JFrame implements ActionListener
         add(telefono);
         add(correo);
         
-        tbOldNombre.setVisible(false);
-        add(tbOldNombre);
+        tbOldCi.setVisible(false);
+        add(tbOldCi);
         add(tbCi);
         add(tbNombre);
         add(tbApellido);
@@ -62,6 +63,7 @@ public class VentanaCliente extends JFrame implements ActionListener
         add(tbTelefono);
         add(tbCorreo);
         add(btnRegistrar);
+        add(btnNuevo);
         add(btnMenu);
         
         btnRegistrar.addActionListener(this);
@@ -69,6 +71,7 @@ public class VentanaCliente extends JFrame implements ActionListener
         btnBuscar.addActionListener(this);
         btnActualizar.addActionListener(this);
         btnEliminar.addActionListener(this);
+        btnNuevo.addActionListener(this);
         
         //CONFIG FRAME
         setLayout(null);
@@ -83,31 +86,42 @@ public class VentanaCliente extends JFrame implements ActionListener
     public static Sistema frmCrear;
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnRegistrar) {
-            int c = !tbCi.getText().isEmpty() ? Integer.parseInt(tbCi.getText()) : 0;
-            String n = tbNombre.getText();
-            String a = tbApellido.getText();
-            String d = tbDireccion.getText();
-            String t = tbTelefono.getText();
-            String co = tbCorreo.getText();
-
-            Cliente rc = new Cliente(c, n, a, d, t, co);
-            DBA.setCliente(rc);
-            setTitle("GUARDADO");
-
-            // Limpiar los campos después del registro
-            tbCi.setText("");
-            tbNombre.setText("");
-            tbApellido.setText("");
-            tbDireccion.setText("");
-            tbTelefono.setText("");
-            tbCorreo.setText("");
+            try {
+                int c = !tbCi.getText().isEmpty() ? Integer.parseInt(tbCi.getText()) : 0;
+                // Verificar si el CI ya está registrado
+                Cliente existingClient = DBA.getClientePorCi(c);
+                if (existingClient != null) {
+                    JOptionPane.showMessageDialog(this, "El CI ya está registrado.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                String n = tbNombre.getText();
+                String a = tbApellido.getText();
+                String d = tbDireccion.getText();
+                String t = tbTelefono.getText();
+                String co = tbCorreo.getText();
+        
+                Cliente rc = new Cliente(c, n, a, d, t, co);
+                DBA.setCliente(rc);
+                // Obtener el tamaño del vector después de agregar el cliente
+                int vectorSize = DBA.getSizeCliente();
+                setTitle("GUARDADO en posición " + vectorSize);
+                // Limpiar los campos después del registro
+                tbCi.setText("");
+                tbNombre.setText("");
+                tbApellido.setText("");
+                tbDireccion.setText("");
+                tbTelefono.setText("");
+                tbCorreo.setText("");
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Error en el formato de número: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error al registrar el cliente: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
        
         if (e.getSource() == btnBuscar) {
             try {
-                String codStr = tbBuscador.getText().trim();
-                System.out.println("Código ingresado: " + codStr); // Depuración
-                
                 int ci = Integer.parseInt(tbBuscador.getText()); // Convertir el texto de tbCi a un entero
                 Cliente c = DBA.getClientePorCi(ci); // Buscar el cliente por CI
                 if (c != null) {
@@ -117,9 +131,11 @@ public class VentanaCliente extends JFrame implements ActionListener
                     tbDireccion.setText(c.getDireccion());
                     tbTelefono.setText(c.getTelefono());
                     tbCorreo.setText(c.getCorreo());
+                    // Almacenar el CI antiguo en la caja de texto oculta
+                    tbOldCi.setText(String.valueOf(c.getCi()));
                     
-                    // Almacenar el código antiguo en la caja de texto oculta
-                    tbOldNombre.setText(c.getNombre());
+                    btnRegistrar.setVisible(false);
+                    btnNuevo.setVisible(true);
                 } else {
                     JOptionPane.showMessageDialog(this, "Cliente no encontrado.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
@@ -132,26 +148,23 @@ public class VentanaCliente extends JFrame implements ActionListener
         
         if (e.getSource() == btnActualizar) {
             try {
-                String oldNombre = tbOldNombre.getText().trim(); // Nombre antiguo
-                System.out.println("Nombre antiguo ingresado para actualización: " + oldNombre);
-                
+                int oldCi = !tbOldCi.getText().isEmpty() ? Integer.parseInt(tbOldCi.getText()) : 0; 
+        
                 int c = !tbCi.getText().isEmpty() ? Integer.parseInt(tbCi.getText()) : 0;
-                String newNombre = tbNombre.getText(); // Nuevo nombre
+                String n = tbNombre.getText();
                 String a = tbApellido.getText();
                 String d = tbDireccion.getText();
                 String t = tbTelefono.getText();
                 String co = tbCorreo.getText();
         
-                Cliente rc = new Cliente(c, newNombre, a, d, t, co);
-                boolean actualizado = DBA.updateCliente(oldNombre, rc);
-        
+                Cliente rc = new Cliente(c, n, a, d, t, co);
+                boolean actualizado = DBA.updateCliente(oldCi, rc);
                 if (actualizado) {
                     setTitle("ACTUALIZADO");
                     JOptionPane.showMessageDialog(this, "Cliente actualizado exitosamente.");
                 } else {
                     JOptionPane.showMessageDialog(this, "Error al actualizar el cliente.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-        
                 // Limpiar los campos después de la actualización
                 tbCi.setText("");
                 tbNombre.setText("");
@@ -159,9 +172,8 @@ public class VentanaCliente extends JFrame implements ActionListener
                 tbDireccion.setText("");
                 tbTelefono.setText("");
                 tbCorreo.setText("");
-                
                 // Limpiar la caja de texto oculta
-                tbOldNombre.setText("");
+                tbOldCi.setText("");
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Error en el formato de número: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             } catch (Exception ex) {
@@ -179,7 +191,6 @@ public class VentanaCliente extends JFrame implements ActionListener
                 } else {
                     JOptionPane.showMessageDialog(this, "Error al eliminar el cliente.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-        
                 // Limpiar los campos después de la eliminación
                 tbCi.setText("");
                 tbNombre.setText("");
@@ -192,6 +203,17 @@ public class VentanaCliente extends JFrame implements ActionListener
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error al eliminar el cliente: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+        
+        if (e.getSource() == btnNuevo) {
+            btnNuevo.setVisible(false);
+            tbCi.setText("");
+            tbNombre.setText("");
+            tbApellido.setText("");
+            tbDireccion.setText("");
+            tbTelefono.setText("");
+            tbCorreo.setText("");  
+            btnRegistrar.setVisible(true);
         }
         
         if (e.getSource() == btnMenu) {

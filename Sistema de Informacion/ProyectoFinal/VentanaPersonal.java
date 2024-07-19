@@ -25,7 +25,7 @@ public class VentanaPersonal extends JFrame implements ActionListener
     Texto telefono= new Texto("Telefono: ", 300, 240, 100, 20, Color.BLACK, 16);
     Texto correo= new Texto("Correo: ", 300, 270, 100, 20, Color.BLACK, 16);
     
-    Caja tbOldNombre= new Caja(0, 0, 5);
+    Caja tbOldCi= new Caja(0, 0, 5);
     Caja tbCi= new Caja(400, 120, 5);
     Caja tbNombre= new Caja(400, 150, 5);
     Caja tbApellido= new Caja(400, 180, 5);
@@ -33,6 +33,7 @@ public class VentanaPersonal extends JFrame implements ActionListener
     Caja tbTelefono= new Caja(400, 240, 5);
     Caja tbCorreo= new Caja(400, 270, 5);
     Boton btnRegistrar= new Boton("REGISTRAR", 300, 320, 100, 30, Color.WHITE);
+    Boton btnNuevo= new Boton("NUEVO", 300, 320, 100, 30, Color.WHITE);
     Boton btnMenu= new Boton("MENU", 420, 320, 100, 30, Color.WHITE);
     
     public VentanaPersonal()
@@ -53,8 +54,8 @@ public class VentanaPersonal extends JFrame implements ActionListener
         add(telefono);
         add(correo);
         
-        tbOldNombre.setVisible(false);
-        add(tbOldNombre);
+        tbOldCi.setVisible(false);
+        add(tbOldCi);
         add(tbCi);
         add(tbNombre);
         add(tbApellido);
@@ -62,6 +63,7 @@ public class VentanaPersonal extends JFrame implements ActionListener
         add(tbTelefono);
         add(tbCorreo);
         add(btnRegistrar);
+        add(btnNuevo);
         add(btnMenu);
         
         btnRegistrar.addActionListener(this);
@@ -69,6 +71,7 @@ public class VentanaPersonal extends JFrame implements ActionListener
         btnBuscar.addActionListener(this);
         btnActualizar.addActionListener(this);
         btnEliminar.addActionListener(this);
+        btnNuevo.addActionListener(this);
         
         //CONFIG FRAME
         setLayout(null);
@@ -83,24 +86,38 @@ public class VentanaPersonal extends JFrame implements ActionListener
     public static Sistema frmCrear;
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnRegistrar) {
-            int c = !tbCi.getText().isEmpty() ? Integer.parseInt(tbCi.getText()) : 0;
-            String n = tbNombre.getText();
-            String a = tbApellido.getText();
-            String p = tbPuesto.getText();
-            String t = tbTelefono.getText();
-            String co = tbCorreo.getText();
-
-            Personal rp = new Personal(c, n, a, p, t, co);
-            DBA.setPersonal(rp);
-            setTitle("GUARDADO");
-
-            // Limpiar los campos después del registro
-            tbCi.setText("");
-            tbNombre.setText("");
-            tbApellido.setText("");
-            tbPuesto.setText("");
-            tbTelefono.setText("");
-            tbCorreo.setText("");
+            try {
+                int c = !tbCi.getText().isEmpty() ? Integer.parseInt(tbCi.getText()) : 0;
+                // Verificar si el CI ya está registrado
+                Personal existingPersonal = DBA.getPersonalPorCi(c); // Asumiendo que existe este método en DBA
+                if (existingPersonal != null) {
+                    JOptionPane.showMessageDialog(this, "El CI ya está registrado.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+        
+                String n = tbNombre.getText();
+                String a = tbApellido.getText();
+                String p = tbPuesto.getText();
+                String t = tbTelefono.getText();
+                String co = tbCorreo.getText();
+        
+                Personal rp = new Personal(c, n, a, p, t, co);
+                DBA.setPersonal(rp);
+                // Obtener el tamaño del vector después de agregar el personal
+                int vectorSize = DBA.getSizePersonal(); // Asumiendo que existe este método en DBA
+                setTitle("GUARDADO en posición " + vectorSize);
+                // Limpiar los campos después del registro
+                tbCi.setText("");
+                tbNombre.setText("");
+                tbApellido.setText("");
+                tbPuesto.setText("");
+                tbTelefono.setText("");
+                tbCorreo.setText("");
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Error en el formato de número: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error al registrar el personal: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
         
         if (e.getSource() == btnBuscar) {
@@ -114,9 +131,11 @@ public class VentanaPersonal extends JFrame implements ActionListener
                     tbPuesto.setText(p.getPuesto());
                     tbTelefono.setText(p.getTelefono());
                     tbCorreo.setText(p.getCorreo());
-                    
                     // Almacenar el nombre antiguo en la caja de texto oculta
-                    tbOldNombre.setText(p.getNombre());
+                    tbOldCi.setText(String.valueOf(p.getCi()));
+                    
+                    btnRegistrar.setVisible(false);
+                    btnNuevo.setVisible(true);
                 } else {
                     JOptionPane.showMessageDialog(this, "Registro no encontrado.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
@@ -129,18 +148,17 @@ public class VentanaPersonal extends JFrame implements ActionListener
         
         if (e.getSource() == btnActualizar) {
             try {
-                String oldNombre = tbOldNombre.getText().trim(); // Nombre antiguo
-                System.out.println("Nombre antiguo ingresado para actualización: " + oldNombre);
+                int oldCi = !tbOldCi.getText().isEmpty() ? Integer.parseInt(tbOldCi.getText()) : 0;
         
-                int newCi = !tbCi.getText().isEmpty() ? Integer.parseInt(tbCi.getText()) : 0; // Nuevo CI
-                String newNombre = tbNombre.getText();
+                int c = !tbCi.getText().isEmpty() ? Integer.parseInt(tbCi.getText()) : 0;
+                String n = tbNombre.getText();
                 String a = tbApellido.getText();
                 String p = tbPuesto.getText();
                 String t = tbTelefono.getText();
                 String co = tbCorreo.getText();
         
-                Personal rp = new Personal(newCi, newNombre, a, p, t, co);
-                boolean actualizado = DBA.updatePersonal(oldNombre, rp);
+                Personal rp = new Personal(c, n, a, p, t, co);
+                boolean actualizado = DBA.updatePersonal(oldCi, rp);
         
                 if (actualizado) {
                     setTitle("ACTUALIZADO");
@@ -148,21 +166,21 @@ public class VentanaPersonal extends JFrame implements ActionListener
                 } else {
                     JOptionPane.showMessageDialog(this, "Error al actualizar el personal.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-        
                 // Limpiar los campos después de la actualización
-                tbOldNombre.setText("");
                 tbCi.setText("");
                 tbNombre.setText("");
                 tbApellido.setText("");
                 tbPuesto.setText("");
                 tbTelefono.setText("");
                 tbCorreo.setText("");
+                // Limpiar la caja de texto oculta
+                tbOldCi.setText("");
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Error en el formato de número: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error al actualizar el personal: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
-        }   
+        }
         
         if (e.getSource() == btnEliminar) {
             try {
@@ -174,7 +192,6 @@ public class VentanaPersonal extends JFrame implements ActionListener
                 } else {
                     JOptionPane.showMessageDialog(this, "Error al eliminar el personal.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-        
                 // Limpiar los campos después de la eliminación
                 tbCi.setText("");
                 tbNombre.setText("");
@@ -187,6 +204,17 @@ public class VentanaPersonal extends JFrame implements ActionListener
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error al eliminar el personal: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+        
+        if (e.getSource() == btnNuevo) {
+            btnNuevo.setVisible(false);
+            tbCi.setText("");
+            tbNombre.setText("");
+            tbApellido.setText("");
+            tbPuesto.setText("");
+            tbTelefono.setText("");
+            tbCorreo.setText("");  
+            btnRegistrar.setVisible(true);
         }
         
         if (e.getSource() == btnMenu) {

@@ -32,8 +32,8 @@ public class VentanaVenta extends JFrame implements ActionListener
     Caja tbCantidad= new Caja(400, 210, 5);
     Caja tbProducto= new Caja(400, 240, 5);
     Caja tbTotal= new Caja(400, 270, 5);
-    
     Boton btnRegistrar= new Boton("REGISTRAR", 300, 320, 100, 30, Color.white);
+    Boton btnNuevo= new Boton("NUEVO", 300, 320, 100, 30, Color.white);
     Boton btnMenu= new Boton("MENU", 420, 320, 100, 30, Color.white);
     
     public VentanaVenta()
@@ -62,7 +62,8 @@ public class VentanaVenta extends JFrame implements ActionListener
         add(tbCantidad);
         add(tbProducto);
         add(tbTotal);
-        add(btnRegistrar);
+        add(btnRegistrar); 
+        add(btnNuevo);
         add(btnMenu);
         
         btnRegistrar.addActionListener(this);
@@ -70,7 +71,7 @@ public class VentanaVenta extends JFrame implements ActionListener
         btnBuscar.addActionListener(this);
         btnActualizar.addActionListener(this);
         btnEliminar.addActionListener(this);
-        
+        btnNuevo.addActionListener(this);
         
         //CONFIG FRAME
         setLayout(null);
@@ -85,33 +86,42 @@ public class VentanaVenta extends JFrame implements ActionListener
     public static Sistema frmCrear;
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnRegistrar) {
-            int cv = !tbCodVenta.getText().isEmpty() ? Integer.parseInt(tbCodVenta.getText()) : 0;
-            String f = tbFecha.getText();
-            String c = tbCliente.getText();
-            int ca = !tbCantidad.getText().isEmpty() ? Integer.parseInt(tbCantidad.getText()) : 0;
-            String p = tbProducto.getText();
-            double t = tbTotal.getText().isEmpty() ? 0.0 : Double.parseDouble(tbTotal.getText());
-            
-            System.out.println("Registrando venta con código: " + cv); // Depuración
-            
-            Venta rv = new Venta(cv, f, c, ca, p, t);
-            DBA.setVenta(rv);
-            setTitle("GUARDADO");
-
-            // Limpiar los campos después del registro
-            tbCodVenta.setText("");
-            tbFecha.setText("");
-            tbCliente.setText("");
-            tbCantidad.setText("");
-            tbProducto.setText("");
-            tbTotal.setText("");
+            try {
+                int cod = !tbCodVenta.getText().isEmpty() ? Integer.parseInt(tbCodVenta.getText()) : 0;
+                // Verificar si el código de venta ya está registrado
+                Venta existingVenta = DBA.getVentaPorCod(cod);
+                if (existingVenta != null) {
+                    JOptionPane.showMessageDialog(this, "El código de venta ya está registrado.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                String f = tbFecha.getText();
+                String c = tbCliente.getText();
+                int ca = !tbCantidad.getText().isEmpty() ? Integer.parseInt(tbCantidad.getText()) : 0;
+                String p = tbProducto.getText();
+                double t = tbTotal.getText().isEmpty() ? 0.0 : Double.parseDouble(tbTotal.getText());
+        
+                Venta rv = new Venta(cod, f, c, ca, p, t);
+                DBA.setVenta(rv);
+                // Obtener el tamaño del vector después de agregar la venta
+                int vectorSize = DBA.getSizeVenta();
+                setTitle("GUARDADO en posición " + vectorSize);
+                // Limpiar los campos después del registro
+                tbCodVenta.setText("");
+                tbFecha.setText("");
+                tbCliente.setText("");
+                tbCantidad.setText("");
+                tbProducto.setText("");
+                tbTotal.setText("");
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Error en el formato de número: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error al registrar la venta: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
         
         if (e.getSource() == btnBuscar) {
             try {
-                String codStr = tbBuscador.getText().trim();
-                System.out.println("Código ingresado: " + codStr); // Depuración
-                int cod = Integer.parseInt(codStr);
+                int cod = Integer.parseInt(tbBuscador.getText());
                 Venta v = DBA.getVentaPorCod(cod);
                 if (v != null) {
                     tbCodVenta.setText(String.valueOf(v.getCodVenta()));
@@ -120,9 +130,11 @@ public class VentanaVenta extends JFrame implements ActionListener
                     tbCantidad.setText(String.valueOf(v.getCantidad()));
                     tbProducto.setText(v.getProducto());
                     tbTotal.setText(String.valueOf(v.getTotal()));
-                    
                     // Almacenar el código antiguo en la caja de texto oculta
                     tbOldCodVenta.setText(String.valueOf(v.getCodVenta()));
+                    
+                    btnRegistrar.setVisible(false);
+                    btnNuevo.setVisible(true);
                 } else {
                     JOptionPane.showMessageDialog(this, "Registro NO encontrado.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
@@ -135,27 +147,23 @@ public class VentanaVenta extends JFrame implements ActionListener
         
         if (e.getSource() == btnActualizar) {
             try {
-                int oldCod = Integer.parseInt(tbOldCodVenta.getText().trim()); // Código antiguo
-                System.out.println("Código antiguo ingresado para actualización: " + oldCod);
+                int oldCod = Integer.parseInt(tbOldCodVenta.getText().trim()); 
         
-                int newCod = !tbCodVenta.getText().isEmpty() ? Integer.parseInt(tbCodVenta.getText()) : 0; // Nuevo código
+                int cod = !tbCodVenta.getText().isEmpty() ? Integer.parseInt(tbCodVenta.getText()) : 0;
                 String f = tbFecha.getText();
                 String c = tbCliente.getText();
                 int ca = !tbCantidad.getText().isEmpty() ? Integer.parseInt(tbCantidad.getText()) : 0;
                 String p = tbProducto.getText();
                 double t = tbTotal.getText().isEmpty() ? 0.0 : Double.parseDouble(tbTotal.getText());
         
-                System.out.println("Intentando actualizar la venta con código antiguo: " + oldCod);
-                Venta rv = new Venta(newCod, f, c, ca, p, t);
+                Venta rv = new Venta(cod, f, c, ca, p, t);
                 boolean actualizado = DBA.updateVenta(oldCod, rv);
-        
                 if (actualizado) {
                     setTitle("ACTUALIZADO");
                     JOptionPane.showMessageDialog(this, "Venta actualizada exitosamente.");
                 } else {
                     JOptionPane.showMessageDialog(this, "Error al actualizar la venta.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-        
                 // Limpiar los campos después de la actualización
                 tbCodVenta.setText("");
                 tbFecha.setText("");
@@ -163,7 +171,6 @@ public class VentanaVenta extends JFrame implements ActionListener
                 tbCantidad.setText("");
                 tbProducto.setText("");
                 tbTotal.setText("");
-        
                 // Limpiar la caja de texto oculta
                 tbOldCodVenta.setText("");
             } catch (NumberFormatException ex) {
@@ -183,7 +190,6 @@ public class VentanaVenta extends JFrame implements ActionListener
                 } else {
                     JOptionPane.showMessageDialog(this, "Error al eliminar la venta.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
-        
                 // Limpiar los campos después de la eliminación
                 tbCodVenta.setText("");
                 tbFecha.setText("");
@@ -196,6 +202,17 @@ public class VentanaVenta extends JFrame implements ActionListener
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error al eliminar la venta: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+        
+        if (e.getSource() == btnNuevo) {
+            btnNuevo.setVisible(false);
+            tbCodVenta.setText("");
+            tbFecha.setText("");
+            tbCliente.setText("");
+            tbCantidad.setText("");
+            tbProducto.setText("");
+            tbTotal.setText(""); 
+            btnRegistrar.setVisible(true);
         }
         
         if (e.getSource() == btnMenu) {
